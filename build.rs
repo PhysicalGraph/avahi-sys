@@ -1,7 +1,7 @@
 extern crate bindgen;
 
 use std::env;
-use std::path::{Path};
+use std::path::Path;
 
 fn main() {
     if !std::env::var("TARGET").unwrap().contains("-linux") {
