@@ -12,6 +12,10 @@ keywords = ["avahi", "zeroconf", "mdns", "bonjour", "dnssd"]
 categories = ["api-bindings", "external-ffi-bindings", "network-programming", "os", "os::linux-apis"]
 build = "build.rs"
 
+[features]
+default = []
+buildtime_bindgen = []
+
 [build-dependencies]
 bindgen = "0.55.1"
 
