@@ -7,6 +7,9 @@ fn main() {
     if !std::env::var("TARGET").unwrap().contains("-linux") {
         return;
     }
+    
+    println!("cargo:rustc-link-lib=avahi-client");
+    println!("cargo:rustc-link-lib=avahi-common");
 
     generate_bindings(env::var("OUT_DIR").expect("Out Dir variable not set"));
 }
@@ -25,10 +28,7 @@ fn generate_bindings(out_path: impl AsRef<Path>) {
 fn generate_bindings(out_path: impl AsRef<Path>) {
     println!("cargo:rerun-if-changed=avahi-sys");
     println!("cargo:rerun-if-changed=wrapper.h");
-
-    println!("cargo:rustc-link-lib=avahi-client");
-    println!("cargo:rustc-link-lib=avahi-common");
-
+    
     let mut builder = bindgen::Builder::default();
 
     if cfg!(feature = "verbose_build") {
