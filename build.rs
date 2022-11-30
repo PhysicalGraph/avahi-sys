@@ -26,7 +26,6 @@ fn generate_bindings(out_path: impl AsRef<Path>) {
 
 #[cfg(feature = "buildtime_bindgen")]
 fn generate_bindings(out_path: impl AsRef<Path>) {
-    println!("cargo:rerun-if-changed=avahi-sys");
     println!("cargo:rerun-if-changed=wrapper.h");
     
     let mut builder = bindgen::Builder::default();
