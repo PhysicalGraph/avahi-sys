@@ -17,7 +17,7 @@ default = []
 buildtime_bindgen = []
 
 [build-dependencies]
-bindgen = "0.55.1"
+bindgen = "0.63"
 
 [dependencies]
 libc = "0.2.77"
