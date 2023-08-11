@@ -13,7 +13,7 @@ categories = ["api-bindings", "external-ffi-bindings", "network-programming", "o
 build = "build.rs"
 
 [features]
-default = []
+default = ["buildtime_bindgen"]
 buildtime_bindgen = []
 
 [build-dependencies]

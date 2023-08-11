@@ -1,46 +1,62 @@
 extern crate bindgen;
 
-use std::env;
-use std::path::Path;
+use std::{env, path::Path};
+
+#[cfg(feature = "buildtime_bindgen")]
+#[derive(Debug)]
+enum Error {
+    Bindgen(bindgen::BindgenError),
+    IO(std::io::Error),
+}
 
 fn main() {
-    if !std::env::var("TARGET").unwrap().contains("-linux") {
+    if !env::var("TARGET").unwrap().contains("-linux") {
         return;
     }
-    
+
     println!("cargo:rustc-link-lib=avahi-client");
     println!("cargo:rustc-link-lib=avahi-common");
 
-    generate_bindings(env::var("OUT_DIR").expect("Out Dir variable not set"));
-}
+    let out_path =
+        Path::new(&env::var("OUT_DIR").expect("Out Dir variable not set")).join("bindings.rs");
 
-#[cfg(not(feature = "buildtime_bindgen"))]
-fn generate_bindings(out_path: impl AsRef<Path>) {
-    let in_path = env::var("AVAHI_SYS_BINDINGS_FILE").expect(
-        "AVAHI_SYS_BINDINGS_FILE should be populated if buildtime_bindgen feature is not enabled",
-    );
+    if let Ok(in_path) = env::var("AVAHI_SYS_BINDINGS_FILE") {
+        if let Err(e) = std::fs::copy(in_path, &out_path) {
+            eprintln!("Failed to copy bindings to destination: {e:?}");
+        } else {
+            return;
+        }
+    }
 
-    std::fs::copy(in_path, out_path.as_ref().join("bindings.rs"))
-        .expect("Failed to copy bindings to desintation");
+    #[cfg(feature = "buildtime_bindgen")]
+    if let Err(e) = generate_bindings(out_path) {
+        eprintln!("Failed to generate bindings. Error: {e:?}");
+    } else {
+        return;
+    }
+
+    panic!("Failed to find bindings. Set AVAHI_SYS_BINDINGS_FILE to override binding generation");
 }
 
 #[cfg(feature = "buildtime_bindgen")]
-fn generate_bindings(out_path: impl AsRef<Path>) {
+fn generate_bindings(out_path: impl AsRef<Path>) -> Result<(), Error> {
     println!("cargo:rerun-if-changed=wrapper.h");
-    
+
     let mut builder = bindgen::Builder::default();
 
     if cfg!(feature = "verbose_build") {
         builder = builder.clang_arg("-v");
     }
 
-    builder
+    let bindings = builder
         .header("wrapper.h")
         .ctypes_prefix("::libc")
         .size_t_is_usize(true)
         .bitfield_enum("AvahiClientFlags")
         .generate()
-        .expect("failed to generate bindings")
-        .write_to_file(out_path.as_ref().join("bindings.rs"))
-        .expect("failed to write bindings to file");
+        .map_err(Error::Bindgen)?;
+
+    bindings.write_to_file(out_path).map_err(Error::IO)?;
+
+    Ok(())
 }
